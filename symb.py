@@ -6,7 +6,8 @@ def isNum(c):
     return c in num
 
 precedence = {'+':1, '-':1, '*':2, '/':2, '^':3, 'sin':4, 'cos':4, 'ln':4, 'exp':4, 'sqrt':4} 
-dvar={}
+presetdvar={'e':'2.718281828','Pi':'3.1415926535'}
+dvar=presetdvar
 dfunc={}
 
 # A utility function to check is the given character 
@@ -28,7 +29,9 @@ def convint(n):
     try:
         return int(n)
     except ValueError:
-        return float(n) 
+        return float(n)
+    except TypeError:  
+        return None 
 
 class Conversion: 
       
@@ -106,9 +109,15 @@ class Conversion:
             elif((j+3<l)and (exp[j]+exp[j+1]+exp[j+2]+exp[j+3]) in fun):
                 d+=[(exp[j]+exp[j+1]+exp[j+2]+exp[j+3])]
                 j+=3
-            else:
-                d+=[i] 
-            
+            elif(i in '+-*/^'):
+                d+=[i]
+            elif(i.isalpha()):
+                a=''
+                while( (j<l) and ((exp[j]).isalpha()) ):
+                     a+=exp[j]
+                     j+=1
+                d+=[a]
+                j-=1 
             j+=1 
         return d
           
@@ -484,9 +493,54 @@ def simpl(t):
             t.value=exp((t.right).value)
             t.right.delnode()
             t.right=None              
-# Python program for expression tree 
-  
-# An expression tree node 
+
+def Et2num(t):
+    r=constructTree(Conversion(len(t)).infixToPostfix(t))   
+    Eval(r,dvar)
+    simpl(r)
+    if(isnmb(r.value)and(r.left is None)and(r.right is None)):
+        return convint(r.value)
+    else:
+        print('Cannot evaluate input data')
+        return None
+
+def Etconv(r):
+    try:
+        return int(r)
+    except ValueError:
+        try:
+            return float(r)
+        except ValueError:
+            try:
+                return Et2num(r)
+            except ValueError:
+                print('Cannot parse input data')
+    except TypeError:
+        print('Cannot parse input data')
+        
+
+def Parse3(s):
+    d=s.split()
+    u=[]
+    for p in d:
+        u+=[[Etconv(h) for h in (p[1:-1]).split(',')]]
+    return u
+
+def Plot(t):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    #import numpy as np
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    xs = [i[0] for i in t]
+    ys = [i[1] for i in t]
+    zs = [i[2] for i in t]
+    ax.scatter(xs, ys, zs, c='b', marker='o')
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.show()
+
 class Et: 
   
     # Constructor to create a node 
@@ -525,6 +579,8 @@ def setvar(var,val):
 
 def setfun(namefun,fun):
     dfunc[namefun]=constructTree(Conversion(len(fun)).infixToPostfix(fun))
+    inorder(dfunc[namefun])
+    print()
 
 def calc(namefun):
     r=Et('$')
@@ -540,6 +596,7 @@ def diffun(namefun,var):
     r=Et('$')
     r.nodecpy(dfunc[namefun])
     Diff(r,var)
+    simlp(r)
     inorder(r)
     print()
     del r 
@@ -547,28 +604,29 @@ def diffun(namefun,var):
 def Expr(s):
     if(s[0]=='setvar'):
         setvar(s[1],float(s[2]))
-    if(s[0]=='setfun'):
+    elif(s[0]=='setfun'):
         setfun(s[1],s[2])
-    if(s[0]=='calc'):
+    elif(s[0]=='calc'):
         calc(s[1])
-    if(s[0]=='diff'):
+    elif(s[0]=='diff'):
         diffun(s[1],s[2])
-    if(s[0]=='clear'):
-        dvar={}
+    elif(s[0]=='clear'):
+        dvar=presetdvar
         dfunc={}
-    if(s[0]=='clearvar'):
+    elif(s[0]=='clearvar'):
         dvar={}
-    if(s[0]=='clearval'):
+    elif(s[0]=='clearfun'):
         dfunc={}
-    if(s[0]=='exit'):
+    elif(s[0]=='exit'):
         return 0
+    elif(s[0]=='plot'):
+        Plot(Parse3(' '.join(s[1:])))
+    else:
+        print("Wrong command!")
 
-
-s=''
 k=None
 while(k is None):
-    s=input().split()
-    k=Expr(s)
+    k=Expr(input().split())
 
 
 
