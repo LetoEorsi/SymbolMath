@@ -252,51 +252,61 @@ def Diff(t,exp):
         if(isinstance((t.right).value,int) or isinstance((t.right).value,float)):
             t.value='*'
             tl=copyEt(t.left)
+            g=copyEt(t.right)
             b=Et('^')
             d=Et('*')
             c=Et((t.right).value)
             Diff(t.left,exp)
+            df=copyEt(t.left)
             d.left=c
-            d.right=t.left
+            d.right=df
             b.left=tl
-            t.right.value-=1
-            b.right=t.right
+            g.value-=1
+            b.right=g
             t.left=d
             t.right=b
         else:
-            a=copyEt(t.left)
-            b=copyEt(t.right)
+            f=copyEt(t.left)
+            f1=copyEt(t.left)
+            f2=copyEt(t.left)
+            f3=copyEt(t.left)
+            g=copyEt(t.right)
+            g1=copyEt(t.right)
+            g2=copyEt(t.right)
             t.value='+'
             Diff(t.left,exp)
             Diff(t.right,exp)
+            df=copyEt(t.left)
+            dg=copyEt(t.right)
+#****************************
             b1=Et('*')
-            b2=Et('*')
-            b3=Et('ln')
-            b4=Et('^')
-            b4.left=a
-            b4.right=b
-            b3.left=None
-            b3.right=a
-            b2.left=b3
-            b2.right=b4
-            b1.left=t.right
+            b2=Et('^')
+            b3=Et('*')
+            b4=Et('/')
+            b2.left=f
+            b2.right=g
             b1.right=b2
+            b4.left=df
+            b4.right=f1
+            b3.left=b4
+            b3.right=g1
+            b1.left=b3
             t.left=b1
-            #*******
-            b5=Et('*')
-            b6=Et('*')
-            b7=Et('^')
-            b8=Et('-')
-            b9=Et(1)
-            b8.left=b
-            b8.right=b9
-            b7.left=a
-            b7.right=b8
-            b6.left=b
-            b6.right=b7
-            b5.left=t.right
-            b5.right=b6
-            t.right=b5
+#******************************
+            c1=Et('*')
+            c2=Et('^')
+            c3=Et('*')
+            c4=Et('ln')
+            c2.right=g2
+            c2.left=f2
+            c4.left=None
+            c4.right=f3
+            c3.left=c4
+            c3.right=dg
+            c1.left=c3
+            c1.right=c2
+            t.right=c1
+			
             
     elif(t.value=='*'):
         t.value='+'
@@ -305,30 +315,36 @@ def Diff(t,exp):
         b=Et('*')
         c=Et('*')
         Diff(t.left,exp)
-        b.left=t.left
+        df=copyEt(t.left)
+        b.left=df
         b.right=tr
         Diff(t.right,exp)
-        c.left=t.right
+        dg=copyEt(t.right)
+        c.left=dg
         c.right=tl
         t.left=b
         t.right=c
     elif(t.value=='/'):
         tl=copyEt(t.left)
         tr=copyEt(t.right)
+        tr1=copyEt(t.right)
+        tr2=copyEt(t.right)
         b=Et('-')
         bl=Et('*')
         br=Et('*')
         c=Et('*')
         Diff(t.left,exp)
-        bl.left=t.left
-        bl.right=tr
+        df=copyEt(t.left)
+        bl.left=df
+        bl.right=tr2
         Diff(t.right,exp)
-        br.left=t.right
+        dg=copyEt(t.right)
+        br.left=dg
         br.right=tl
         b.left=bl
         b.right=br
         c.left=tr
-        c.right=tr
+        c.right=tr1
         t.left=b
         t.right=c
     elif(t.value=='sin'):
@@ -336,7 +352,8 @@ def Diff(t,exp):
         tl=copyEt(t.right)
         b=Et('cos')
         Diff(t.right,exp)
-        t.left=t.right
+        dg=copyEt(t.right)
+        t.left=dg
         b.left=None
         b.right=tl
         t.right=b
@@ -347,9 +364,10 @@ def Diff(t,exp):
         c=Et('*')
         d=Et(-1)
         Diff(t.right,exp)
+        dg=copyEt(t.right)
         b.right=tl
         c.left=d
-        c.right=t.right
+        c.right=dg
         t.left=c
         t.right=b
     elif(t.value=='ln'):
@@ -380,6 +398,8 @@ def Diff(t,exp):
         t.right=b
     elif(isinstance(t.value,int) or isinstance(t.value,float)):
         t.value=0
+    elif((t.value).isalpha()):
+        t.value=0
 
 def Eval(t,d):
     if(t.left is not None):
@@ -395,8 +415,17 @@ def simpl(t):
         simpl(t.left)
     if(t.right is not None):
         simpl(t.right)
+
+    #print(t)
+    #print(t.value)
+    #print(t.left)
+    #print(t.right)
     s=(t.left is not None)and(t.right is not None)
     s1=(t.left is None)and(t.right is not None)and(isnmb(t.right.value))
+    if(not s1):
+        s2=(t.left is None)and(t.right is not None)and((t.right.value).isalpha())
+    else:
+        s2=False
     if(s):
         u=(isnmb(t.left.value) and isnmb(t.right.value))
         ul=(isnmb(t.left.value) and not isnmb(t.right.value))
@@ -415,7 +444,9 @@ def simpl(t):
                 t.right.delnode()
                 t.right=None
             elif(t.value=='/'):
+                #print('/-')
                 t.value=t.left.value/t.right.value
+               # print(t.value)
                 t.left.delnode()
                 t.left=None
                 t.right.delnode()
@@ -434,6 +465,13 @@ def simpl(t):
                 t.right=None
         elif(ul):
             if(t.left.value == 0 and t.value == '*'):
+                #print('0l-')
+                t.right.delnode()
+                t.right=None
+                t.value=0
+                t.left=None
+            elif(t.left.value == 0 and t.value == '/'):
+                #print('0l-')
                 t.right.delnode()
                 t.right=None
                 t.value=0
@@ -446,6 +484,7 @@ def simpl(t):
                 t.nodecpy(t.right)
         elif(ur):
             if(t.right.value == 0 and t.value == '*'):
+                #print('0r-')
                 t.left.delnode()
                 t.left=None
                 t.value=0
@@ -492,7 +531,25 @@ def simpl(t):
             from math import exp
             t.value=exp((t.right).value)
             t.right.delnode()
-            t.right=None              
+            t.right=None
+    elif(s2):
+        if(t.value == 'ln')and((t.right).value=='e'):
+            t.value=1
+            t.right.delnode()
+            t.right=None
+        elif(t.value == 'sin')and((t.right).value=='Pi'):
+            t.value=0
+            t.right.delnode()
+            t.right=None
+        elif(t.value == 'cos')and((t.right).value=='Pi'):
+            t.value=-1
+            t.right.delnode()
+            t.right=None  
+    #print('Goes to:')      
+    #print(t.value)
+    #print(t)
+    #print(t.left)
+    #print(t.right)        
 
 def Et2num(t):
     r=constructTree(Conversion(len(t)).infixToPostfix(t))   
@@ -520,22 +577,67 @@ def Etconv(r):
         
 
 def Parse3(s):
-    d=s.split()
-    u=[]
+    d=s.split(']],[[')
+    v=[]
     for p in d:
-        u+=[[Etconv(h) for h in (p[1:-1]).split(',')]]
-    return u
+        u=[]
+        a=p.split('],[')
+        for p1 in a:
+            p1=(p1.replace('[','')).replace(']','')
+            s=[Etconv(i) for i in p1.split(',')]
+            u+=[s]
+        v+=[u]
+    return v
 
 def Plot(t):
     from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     #import numpy as np
     fig = plt.figure()
+    
+    col=['r','g','b','c','m','c']    
     ax = fig.add_subplot(111, projection='3d')
-    xs = [i[0] for i in t]
-    ys = [i[1] for i in t]
-    zs = [i[2] for i in t]
-    ax.scatter(xs, ys, zs, c='b', marker='o')
+
+
+    for k in range(len(t)):
+        cl=col[k%6]
+        xs = [i[0] for i in t[k]]
+        ys = [i[1] for i in t[k]]
+        zs = [i[2] for i in t[k]]
+        ax.scatter(xs, ys, zs, c=cl, marker='o')
+        ax.plot(xs,ys,zs, color=cl)
+
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.show()
+
+def Surf(s,varx,vary):
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    import numpy as np
+    x = np.linspace(0, 6, 30)
+    y = np.linspace(0, 6, 30)
+
+    X, Y = np.meshgrid(x, y)
+    Z=X+Y
+    for i in range(len(x)):
+        for j in range(len(y)):
+            c=copyEt(dfunc[s])
+            Eval(c,{varx:float(x[i]),vary:float(y[j])})
+            simpl(c)
+            #print()
+            #inorder(c)
+            if(isnmb(c.value)):
+                Z[i][j]=c.value
+            else:
+                print("Evaluate error")
+
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1,
+                cmap='viridis', edgecolor='none')
+    ax.set_title('surface');
     ax.set_xlabel('X Label')
     ax.set_ylabel('Y Label')
     ax.set_zlabel('Z Label')
@@ -596,7 +698,7 @@ def diffun(namefun,var):
     r=Et('$')
     r.nodecpy(dfunc[namefun])
     Diff(r,var)
-    simlp(r)
+    simpl(r)
     inorder(r)
     print()
     del r 
@@ -610,6 +712,8 @@ def Expr(s):
         calc(s[1])
     elif(s[0]=='diff'):
         diffun(s[1],s[2])
+    elif(s[0]=='surf'):
+        surf(s[1],s[2],s[3])
     elif(s[0]=='clear'):
         dvar=presetdvar
         dfunc={}
@@ -620,13 +724,14 @@ def Expr(s):
     elif(s[0]=='exit'):
         return 0
     elif(s[0]=='plot'):
-        Plot(Parse3(' '.join(s[1:])))
+        Plot(Parse3(s[1]))
     else:
         print("Wrong command!")
 
 k=None
 while(k is None):
     k=Expr(input().split())
+
 
 
 
